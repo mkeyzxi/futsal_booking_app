@@ -1,0 +1,38 @@
+# pubspec.yaml
+name: futsal_booking_app
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=3.7.2 <4.0.0' # Menggunakan rentang versi yang lebih aman untuk SDK
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.0.5
+  shared_preferences: ^2.2.0
+  image_picker: ^1.0.4
+  intl: ^0.19.0
+  uuid: ^4.4.0
+  flutter_localizations: # <--- PASTIKAN INI ADA!
+    sdk: flutter         # <--- DAN INI!
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/futsal_banner.png
+    - assets/images/futsal_field_vinyl.png
+    - assets/images/futsal_field_synthetic.png
+    - assets/images/futsal_field_standard.png
+  # Untuk menambahkan font custom, jika Anda ingin menggunakan Montserrat
+  # fonts:
+  #   - family: Montserrat
+  #     fonts:
+  #       - asset: assets/fonts/Montserrat-Regular.ttf
+  #       - asset: assets/fonts/Montserrat-Bold.ttf
+  #         weight: 700
