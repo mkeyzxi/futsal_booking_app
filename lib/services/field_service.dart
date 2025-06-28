@@ -16,6 +16,7 @@ class FieldService {
       return decoded.map((model) => Field.fromJson(model)).toList();
     }
     // Jika belum ada data, inisialisasi dengan data dummy
+    // PENTING: Gunakan asset lokal di sini
     return _initialFields();
   }
 
@@ -29,33 +30,43 @@ class FieldService {
     return [
       Field(
         id: _uuid.v4(),
-        name: 'Lapangan 1',
-        type: 'Rumput Sintetis',
+        name: 'Lapangan Vinyl', // Sesuai dengan nama gambar
+        type: 'Karpet Vinyl', // Sesuai dengan jenis lapangan
         description:
-            'Lapangan modern dengan rumput sintetis berkualitas tinggi, cocok untuk pertandingan santai.',
-        pricePerHour: 75000,
-        imageUrl:
-            'https://via.placeholder.com/150/42A5F5/FFFFFF?text=Lapangan+1', // Placeholder image
+            'Lapangan futsal modern dengan permukaan vinyl berkualitas tinggi, ideal untuk permainan cepat dan meminimalkan cedera.',
+        pricePerHour: 120000,
+        imageUrl: 'assets/images/futsal_field_vinyl.png', // <-- Path aset lokal
       ),
       Field(
         id: _uuid.v4(),
-        name: 'Lapangan 2',
-        type: 'Karpet Vinyl',
+        name: 'Lapangan Sintetis', // Sesuai dengan nama gambar
+        type: 'Rumput Sintetis', // Sesuai dengan jenis lapangan
         description:
-            'Permukaan karpet vinyl yang nyaman dan aman, ideal untuk segala jenis pemain.',
-        pricePerHour: 60000,
+            'Lapangan dengan rumput sintetis yang menyerupai asli, memberikan pengalaman bermain yang nyaman dan realistis.',
+        pricePerHour: 150000,
         imageUrl:
-            'https://via.placeholder.com/150/FFC107/FFFFFF?text=Lapangan+2', // Placeholder image
+            'assets/images/futsal_field_synthetic.png', // <-- Path aset lokal
       ),
       Field(
         id: _uuid.v4(),
-        name: 'Lapangan 3',
-        type: 'Profesional',
+        name: 'Lapangan Standar', // Sesuai dengan nama gambar
+        type: 'Standar Umum', // Sesuai dengan jenis lapangan
         description:
-            'Lapangan standar profesional dengan fasilitas lengkap, cocok untuk turnamen dan latihan intensif.',
+            'Lapangan futsal standar dengan harga terjangkau, cocok untuk bermain santai bersama teman-teman.',
         pricePerHour: 100000,
         imageUrl:
-            'https://via.placeholder.com/150/66BB6A/FFFFFF?text=Lapangan+3', // Placeholder image
+            'assets/images/futsal_field_standard.png', // <-- Path aset lokal
+      ),
+      // Tambahan 1 lapangan baru
+      Field(
+        id: _uuid.v4(),
+        name: 'Lapangan Premier',
+        type: 'Indoor Sport',
+        description:
+            'Lapangan indoor serbaguna dengan pencahayaan optimal dan sistem pendingin udara, cocok untuk berbagai aktivitas olahraga.',
+        pricePerHour: 180000,
+        imageUrl:
+            'assets/images/futsal_field_synthetic.png', // Bisa pakai gambar yang sudah ada atau tambahkan baru
       ),
     ];
   }
@@ -64,6 +75,7 @@ class FieldService {
     List<Field> fields = await _loadFields();
     // Pastikan dummy data disimpan jika ini adalah pertama kali dimuat
     if (fields.isEmpty) {
+      // Perlu dicek isian, bukan hanya null
       fields = _initialFields();
       await _saveFields(fields);
     }
