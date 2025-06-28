@@ -25,10 +25,12 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/futsal_banner.png
     - assets/images/futsal_field_vinyl.png
+    - assets/images/futsal_banner.png
+    - assets/images/futsal_background.png
     - assets/images/futsal_field_synthetic.png
     - assets/images/futsal_field_standard.png
+    - assets/images/
   # Untuk menambahkan font custom, jika Anda ingin menggunakan Montserrat
   # fonts:
   #   - family: Montserrat
