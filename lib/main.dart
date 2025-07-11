@@ -6,16 +6,25 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:futsal_booking_app/providers/auth_provider.dart';
 import 'package:futsal_booking_app/providers/field_provider.dart';
 import 'package:futsal_booking_app/providers/booking_provider.dart';
-// import 'package:futsal_booking_app/providers/user_balance_provider.dart'; // <--- HAPUS INI
 
 import 'package:futsal_booking_app/views/auth/login_screen.dart';
 import 'package:futsal_booking_app/views/user/user_dashboard_screen.dart';
-import 'package:futsal_booking_app/views/admin/admin_dashboard_screen.dart';
+import 'package:futsal_booking_app/views/admin/admin_dashboard_screen.dart'; // Pastikan ada
+import 'package:futsal_booking_app/views/splash_screen.dart'; // Asumsi Anda punya splash screen
 
 import 'package:futsal_booking_app/models/user.dart';
 import 'package:futsal_booking_app/utils/app_styles.dart';
+import 'package:futsal_booking_app/utils/database_helper.dart'; // Import DatabaseHelper
 
-void main() {
+void main() async {
+  // Pastikan binding Flutter sudah diinisialisasi sebelum mengakses platform channels
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inisialisasi DatabaseHelper
+  // Ini akan membuat database dan tabel jika belum ada, serta memasukkan data dummy/admin
+  await DatabaseHelper().database;
+  print('Database initialized.');
+
   runApp(const MyApp());
 }
 
@@ -26,11 +35,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // AuthProvider akan memuat currentUser saat diinisialisasi
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        // FieldProvider akan memuat fields saat diinisialisasi
         ChangeNotifierProvider(create: (_) => FieldProvider()),
+        // BookingProvider akan dimuat sesuai kebutuhan fetchBookings (baik semua atau per user)
         ChangeNotifierProvider(create: (_) => BookingProvider()),
-        // Hapus ChangeNotifierProvider untuk UserBalanceProvider
-        // ChangeNotifierProvider(create: (_) => UserBalanceProvider()),
       ],
       child: MaterialApp(
         title: 'Sistem Booking Lapangan Futsal',
@@ -64,7 +74,8 @@ class MyApp extends StatelessWidget {
               vertical: 12,
             ),
           ),
-          fontFamily: 'Montserrat',
+          // Tambahkan fontFamily jika Anda memiliki font kustom
+          // fontFamily: 'Montserrat',
           textTheme: const TextTheme(
             titleLarge: TextStyle(
               fontSize: 24.0,
@@ -86,12 +97,11 @@ class MyApp extends StatelessWidget {
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: const [Locale('en', ''), Locale('id', '')],
+        // Mengatur home berdasarkan status login dan role
         home: Consumer<AuthProvider>(
           builder: (context, authProvider, child) {
             if (authProvider.isLoading) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
+              return const SplashScreen(); // Tampilkan splash screen saat loading auth
             } else if (authProvider.currentUser != null) {
               if (authProvider.currentUser!.role == UserRole.admin) {
                 return const AdminDashboardScreen();

@@ -1,4 +1,4 @@
-// lib/models/field.dart (Diperbarui)
+// lib/models/field.dart
 class Field {
   final String id;
   final String name;
@@ -16,7 +16,8 @@ class Field {
     this.imageUrl,
   });
 
-  Map<String, dynamic> toJson() {
+  // Konversi objek Field ke Map untuk penyimpanan SQLite
+  Map<String, dynamic> toSqliteMap() {
     return {
       'id': id,
       'name': name,
@@ -27,14 +28,15 @@ class Field {
     };
   }
 
-  factory Field.fromJson(Map<String, dynamic> json) {
+  // Buat objek Field dari Map yang dibaca dari SQLite
+  factory Field.fromSqliteMap(Map<String, dynamic> map) {
     return Field(
-      id: json['id'],
-      name: json['name'],
-      type: json['type'],
-      description: json['description'],
-      pricePerHour: (json['pricePerHour'] as num).toDouble(),
-      imageUrl: json['imageUrl'],
+      id: map['id'] as String,
+      name: map['name'] as String,
+      type: map['type'] as String,
+      description: map['description'] as String,
+      pricePerHour: (map['pricePerHour'] as num).toDouble(),
+      imageUrl: map['imageUrl'] as String?,
     );
   }
 }

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:futsal_booking_app/models/field.dart';
 import 'package:futsal_booking_app/models/booking.dart'; // Tetap butuh untuk validasi overlap
-import 'package:futsal_booking_app/providers/booking_provider.dart';
+import 'package:futsal_booking_app/providers/booking_provider.dart'; // Tetap butuh untuk validasi overlap
 import 'package:futsal_booking_app/views/user/booking_confirmation_screen.dart';
 import 'package:futsal_booking_app/utils/app_styles.dart';
 import 'package:intl/intl.dart';
@@ -26,8 +26,8 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
   void initState() {
     super.initState();
     _selectedDate = DateTime.now(); // Inisialisasi tanggal hari ini
-    // Tidak perlu memanggil fetchBookings di sini, karena akan dipanggil di _selectDate
-    // atau sebelum validasi akhir di BookingConfirmationScreen.
+    // Tidak perlu memanggil fetchBookings di sini, karena akan dipanggil di _processPaymentAndBooking
+    // di BookingConfirmationScreen untuk validasi real-time.
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -45,7 +45,6 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
         // Reset waktu jika tanggal berubah, agar user memilih ulang waktu
         _selectedTime = null;
       });
-      // Tidak perlu fetchBookings di sini, biarkan di konfirmasi booking
     }
   }
 
@@ -72,15 +71,12 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
   double get totalBookingPrice => widget.field.pricePerHour * _selectedHours;
   double get dpAmount => totalBookingPrice * 0.3; // DP 30%
 
-  // Hapus metode _getHourlySlots karena kita tidak lagi menampilkan slot per jam
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppStyles.backgroundColor,
       appBar: AppBar(title: Text(widget.field.name)),
       body: SingleChildScrollView(
-        // Tidak lagi Consumer<BookingProvider> di sini
         padding: const EdgeInsets.all(AppStyles.defaultPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,7 +86,8 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
                 borderRadius: BorderRadius.circular(
                   AppStyles.defaultBorderRadius,
                 ),
-                child: Image.network(
+                child: Image.asset(
+                  // Menggunakan Image.asset karena path lokal
                   widget.field.imageUrl!,
                   height: 250,
                   width: double.infinity,
@@ -150,7 +147,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
                       ? 'Pilih tanggal booking'
                       : DateFormat(
                         'dd MMMM yyyy',
-                        'id_ID',
+                        'id_ID', // Tambahkan locale
                       ).format(_selectedDate!),
               icon: Icons.calendar_today,
               onTap: () => _selectDate(context),

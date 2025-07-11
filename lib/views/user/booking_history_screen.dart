@@ -19,14 +19,18 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      if (authProvider.currentUser != null) {
-        Provider.of<BookingProvider>(
-          context,
-          listen: false,
-        ).fetchBookings(userId: authProvider.currentUser!.id);
-      }
+      _fetchUserBookings();
     });
+  }
+
+  Future<void> _fetchUserBookings() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.currentUser != null) {
+      await Provider.of<BookingProvider>(
+        context,
+        listen: false,
+      ).fetchBookings(userId: authProvider.currentUser!.id);
+    }
   }
 
   @override
@@ -50,32 +54,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
             return Center(child: Text(bookingProvider.errorMessage!));
           }
 
-          if (bookingProvider.bookings.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.history, size: 80, color: Colors.grey[400]),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Belum ada riwayat booking.',
-                    style: AppStyles.bodyTextStyle.copyWith(
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Lakukan booking pertama Anda sekarang!',
-                    style: AppStyles.smallTextStyle.copyWith(
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          // Filter booking untuk user yang sedang login
+          // Filter booking untuk user yang sedang login (sudah dilakukan di provider, tapi jika ingin memastikan)
           final userBookings =
               bookingProvider.bookings
                   .where((b) => b.userId == authProvider.currentUser!.id)
@@ -127,11 +106,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     String statusText;
     switch (booking.status) {
       case BookingStatus.pendingPayment:
-        statusColor = Colors.orange;
+        statusColor = AppStyles.warningColor;
         statusText = 'Menunggu Pembayaran';
         break;
       case BookingStatus.paidDP:
-        statusColor = Colors.blue;
+        statusColor = AppStyles.infoColor;
         statusText = 'DP Dibayar';
         break;
       case BookingStatus.paidFull:
@@ -143,10 +122,28 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         statusText = 'Dibatalkan';
         break;
       case BookingStatus.completed:
-        statusColor = Colors.grey;
+        statusColor = AppStyles.secondaryTextColor;
         statusText = 'Selesai';
         break;
+      default:
+        statusColor = Colors.black;
+        statusText = 'Tidak Diketahui';
+        break;
     }
+
+    // Menggabungkan bookingDate dan startTime string menjadi objek DateTime lengkap.
+    // Ini diperlukan karena startTime disimpan sebagai string "HH:MM" di model Anda.
+    final List<String> timeParts = booking.startTime.split(':');
+    final DateTime bookingStartDateTime = DateTime(
+      booking.bookingDate.year,
+      booking.bookingDate.month,
+      booking.bookingDate.day,
+      int.parse(timeParts[0]),
+      int.parse(timeParts[1]),
+    );
+    final DateTime bookingEndDateTime = bookingStartDateTime.add(
+      Duration(hours: booking.durationHours),
+    );
 
     return Card(
       margin: const EdgeInsets.only(bottom: AppStyles.defaultPadding),
@@ -162,9 +159,13 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  booking.field?.name ?? 'Lapangan Tidak Dikenal',
-                  style: AppStyles.subHeadingStyle.copyWith(fontSize: 18),
+                Expanded(
+                  // Tambahkan Expanded untuk mencegah overflow pada nama lapangan yang panjang
+                  child: Text(
+                    booking.field?.name ?? 'Lapangan Tidak Dikenal',
+                    style: AppStyles.subHeadingStyle.copyWith(fontSize: 18),
+                    overflow: TextOverflow.ellipsis, // Tambahkan ellipsis
+                  ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -188,11 +189,15 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
             const SizedBox(height: 8),
             Text(
               '${DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(booking.bookingDate)}', // Menambahkan locale
-              style: AppStyles.bodyTextStyle.copyWith(color: Colors.grey[700]),
+              style: AppStyles.bodyTextStyle.copyWith(
+                color: AppStyles.secondaryTextColor,
+              ),
             ),
             Text(
-              'Pukul: ${booking.startTime} (${booking.durationHours} jam)',
-              style: AppStyles.bodyTextStyle.copyWith(color: Colors.grey[700]),
+              'Pukul: ${DateFormat('HH:mm').format(bookingStartDateTime)} - ${DateFormat('HH:mm').format(bookingEndDateTime)} (${booking.durationHours} jam)',
+              style: AppStyles.bodyTextStyle.copyWith(
+                color: AppStyles.secondaryTextColor,
+              ),
             ),
             const SizedBox(height: 12),
             Row(

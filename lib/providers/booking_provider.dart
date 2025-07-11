@@ -1,17 +1,16 @@
 // lib/providers/booking_provider.dart
 import 'package:flutter/material.dart';
 import 'package:futsal_booking_app/models/booking.dart';
-import 'package:futsal_booking_app/models/user.dart'; // Import User
-import 'package:futsal_booking_app/models/field.dart'; // Import Field
+import 'package:futsal_booking_app/models/user.dart';
+import 'package:futsal_booking_app/models/field.dart';
 import 'package:futsal_booking_app/services/booking_service.dart';
-import 'package:futsal_booking_app/services/field_service.dart'; // Import FieldService
-import 'package:futsal_booking_app/services/auth_service.dart'; // Import AuthService
+import 'package:futsal_booking_app/services/field_service.dart';
+import 'package:futsal_booking_app/services/auth_service.dart';
 
 class BookingProvider with ChangeNotifier {
   final BookingService _bookingService = BookingService();
-  final FieldService _fieldService =
-      FieldService(); // Untuk mengambil detail lapangan
-  final AuthService _authService = AuthService(); // Untuk mengambil detail user
+  final FieldService _fieldService = FieldService();
+  final AuthService _authService = AuthService();
 
   List<Booking> _bookings = [];
   bool _isLoading = false;
@@ -21,30 +20,33 @@ class BookingProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
+  // Memuat semua booking (biasanya untuk admin) atau booking spesifik user
   Future<void> fetchBookings({String? userId}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      List<Booking> fetchedBookings =
-          userId == null
-              ? await _bookingService.getAllBookings()
-              : await _bookingService.getUserBookings(userId);
+      List<Booking> fetchedBookings;
+      if (userId == null) {
+        fetchedBookings = await _bookingService.getAllBookings();
+      } else {
+        fetchedBookings = await _bookingService.getUserBookings(userId);
+      }
 
-      // Load additional details for user and field for display purposes
+      // Load additional details (User and Field objects) for display
       List<Booking> enrichedBookings = [];
       for (var booking in fetchedBookings) {
-        // PERBAIKAN DI SINI: Panggil metode publik getUserById
         User? user = await _authService.getUserById(booking.userId);
         Field? field = await _fieldService.getFieldById(booking.fieldId);
+
         enrichedBookings.add(
           Booking(
             id: booking.id,
             userId: booking.userId,
-            user: user, // user sekarang diambil dari method publik
+            user: user, // Set user object
             fieldId: booking.fieldId,
-            field: field,
+            field: field, // Set field object
             bookingDate: booking.bookingDate,
             startTime: booking.startTime,
             durationHours: booking.durationHours,
@@ -66,6 +68,7 @@ class BookingProvider with ChangeNotifier {
     }
   }
 
+  // Membuat booking baru
   Future<Booking?> createBooking({
     required String userId,
     required String fieldId,
@@ -97,19 +100,14 @@ class BookingProvider with ChangeNotifier {
         createdAt: DateTime.now(),
       );
       final createdBooking = await _bookingService.createBooking(newBooking);
-      // Refresh daftar booking setelah pembuatan, untuk memastikan UI diupdate
-      // Tergantung kebutuhan, Anda bisa refresh semua booking atau hanya booking user
-      await fetchBookings(
-        userId: userId,
-      ); // Contoh: refresh booking untuk user ini
-      notifyListeners();
+      await fetchBookings(userId: userId); // Refresh booking untuk user ini
       return createdBooking;
     } catch (e) {
       _errorMessage = 'Gagal membuat booking: ${e.toString()}';
-      notifyListeners();
       return null;
     } finally {
       _isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -122,7 +120,13 @@ class BookingProvider with ChangeNotifier {
     notifyListeners();
     try {
       await _bookingService.updateBookingStatus(bookingId, newStatus);
-      await fetchBookings(); // Refresh all bookings for admin or relevant bookings
+      // Dapatkan userId dari booking yang diupdate untuk refresh spesifik
+      final updatedBooking = await _bookingService.getBookingById(bookingId);
+      if (updatedBooking != null) {
+        await fetchBookings(userId: updatedBooking.userId);
+      } else {
+        await fetchBookings(); // Fallback untuk refresh semua
+      }
     } catch (e) {
       _errorMessage = 'Gagal memperbarui status booking: ${e.toString()}';
     } finally {
@@ -132,22 +136,25 @@ class BookingProvider with ChangeNotifier {
   }
 
   Future<void> cancelBooking(String bookingId) async {
-    // Memanggil updateBookingStatus untuk mengubah status menjadi cancelled
     await updateBookingStatus(bookingId, BookingStatus.cancelled);
   }
 
   Future<void> markBookingAsCompleted(String bookingId) async {
-    // Memanggil updateBookingStatus untuk mengubah status menjadi completed
     await updateBookingStatus(bookingId, BookingStatus.completed);
   }
 
-  Future<void> updateBookingPayment(String bookingId, double amount) async {
+  Future<void> updateBookingPayment(
+    String bookingId,
+    double amount,
+    String userId,
+  ) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
       await _bookingService.updateBookingPayment(bookingId, amount);
-      await fetchBookings(); // Refresh all bookings to show updated payment
+      // Refresh booking untuk user yang terkait
+      await fetchBookings(userId: userId);
     } catch (e) {
       _errorMessage = 'Gagal memperbarui pembayaran booking: ${e.toString()}';
     } finally {

@@ -1,4 +1,6 @@
 // lib/models/user.dart
+import 'package:uuid/uuid.dart'; // Tambahkan ini jika belum ada
+
 enum UserRole { admin, user }
 
 class User {
@@ -7,40 +9,42 @@ class User {
   final String email;
   final String? profileImageUrl;
   final UserRole role;
-  double balance; // <--- TAMBAHKAN INI (tidak final agar bisa diubah)
+  double balance; // Tidak final, agar bisa diubah
 
   User({
-    required this.id,
+    String? id, // Ubah menjadi opsional agar bisa digenerate
     required this.username,
     required this.email,
     this.profileImageUrl,
     this.role = UserRole.user,
-    this.balance = 0.0, // <--- Beri nilai default
-  });
+    this.balance = 0.0,
+  }) : id = id ?? const Uuid().v4(); // Generate ID jika tidak disediakan
 
-  Map<String, dynamic> toJson() {
+  // Konversi objek User ke Map untuk penyimpanan SQLite
+  Map<String, dynamic> toSqliteMap() {
     return {
       'id': id,
       'username': username,
       'email': email,
+      // Password tidak disimpan di model, hanya di Auth Service
       'profileImageUrl': profileImageUrl,
-      'role': role.toString().split('.').last,
-      'balance': balance, // <--- Tambahkan ke JSON
+      'role': role.toString().split('.').last, // Simpan enum sebagai string
+      'balance': balance,
     };
   }
 
-  factory User.fromJson(Map<String, dynamic> json) {
+  // Buat objek User dari Map yang dibaca dari SQLite
+  factory User.fromSqliteMap(Map<String, dynamic> map) {
     return User(
-      id: json['id'],
-      username: json['username'],
-      email: json['email'],
-      profileImageUrl: json['profileImageUrl'],
+      id: map['id'] as String,
+      username: map['username'] as String,
+      email: map['email'] as String,
+      profileImageUrl: map['profileImageUrl'] as String?,
       role: UserRole.values.firstWhere(
-        (e) => e.toString().split('.').last == json['role'],
-        orElse: () => UserRole.user,
+        (e) => e.toString().split('.').last == map['role'],
+        orElse: () => UserRole.user, // Default jika tidak ditemukan
       ),
-      balance:
-          (json['balance'] as num?)?.toDouble() ?? 0.0, // <--- Baca dari JSON
+      balance: (map['balance'] as num).toDouble(),
     );
   }
 }

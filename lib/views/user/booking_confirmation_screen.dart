@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:futsal_booking_app/models/field.dart';
 import 'package:futsal_booking_app/models/booking.dart';
-import 'package:futsal_booking_app/models/user.dart'; // <-- Tambahkan ini untuk UserRole
-import 'package:futsal_booking_app/providers/auth_provider.dart'; // <--- Gunakan ini untuk saldo
-import 'package:futsal_booking_app/providers/booking_provider.dart';
+import 'package:futsal_booking_app/models/user.dart'; // Import UserRole
+import 'package:futsal_booking_app/providers/auth_provider.dart';
+import 'package:futsal_booking_app/providers/booking_provider.dart'; // Pastikan import ini
 import 'package:futsal_booking_app/utils/app_styles.dart';
 import 'package:futsal_booking_app/views/common_widgets/custom_button.dart';
 import 'package:intl/intl.dart';
@@ -91,7 +91,12 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
         // Tidak perlu debit saldo user dari aplikasi untuk pembayaran cash
       }
 
-      // 2. Validasi Ketersediaan Jadwal (Overlap)
+      // 2. Validasi Ketersediaan Jadwal (Overlap) - Ambil booking terbaru dari SQLite
+      // Penting: Panggil fetchBookings() tanpa userId agar mendapatkan SEMUA booking
+      // ini diperlukan untuk memeriksa overlap antar user.
+      await bookingProvider
+          .fetchBookings(); // Ini akan memuat semua booking dari DB
+
       final DateTime selectedStartDateTime = DateTime(
         widget.selectedDate.year,
         widget.selectedDate.month,
@@ -103,31 +108,33 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
         Duration(hours: widget.durationHours),
       );
 
-      // Ambil semua booking yang relevan untuk validasi
-      await bookingProvider.fetchBookings(userId: null); // Ambil semua booking
       final List<Booking> existingBookingsForField =
           bookingProvider.bookings
               .where(
                 (b) =>
                     b.fieldId == widget.field.id &&
-                    b.status != BookingStatus.cancelled &&
+                    b.bookingDate.year == widget.selectedDate.year &&
+                    b.bookingDate.month == widget.selectedDate.month &&
+                    b.bookingDate.day == widget.selectedDate.day &&
+                    b.status !=
+                        BookingStatus
+                            .cancelled && // Hanya cek booking yang aktif
                     b.status != BookingStatus.completed,
               )
               .toList();
 
       for (var existingBooking in existingBookingsForField) {
-        final existingStartHour = int.parse(
-          existingBooking.startTime.split(':')[0],
-        );
-        final existingMinute = int.parse(
-          existingBooking.startTime.split(':')[1],
-        );
+        // Konversi startTime string ke TimeOfDay untuk perbandingan
+        final List<String> parts = existingBooking.startTime.split(':');
+        final int existingStartHour = int.parse(parts[0]);
+        final int existingStartMinute = int.parse(parts[1]);
+
         final DateTime existingStartDateTime = DateTime(
           existingBooking.bookingDate.year,
           existingBooking.bookingDate.month,
           existingBooking.bookingDate.day,
           existingStartHour,
-          existingMinute,
+          existingStartMinute,
         );
         final DateTime existingEndDateTime = existingStartDateTime.add(
           Duration(hours: existingBooking.durationHours),
@@ -147,7 +154,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
             ); // Rollback saldo melalui AuthProvider
           }
           throw Exception(
-            'Jadwal ini sudah dibooking. Silakan pilih waktu lain.',
+            'Jadwal ini (${DateFormat('HH:mm').format(existingStartDateTime)} - ${DateFormat('HH:mm').format(existingEndDateTime)}) sudah dibooking. Silakan pilih waktu lain.',
           );
         }
       }
@@ -205,8 +212,8 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
             _buildDetailRow(
               'Tanggal:',
               DateFormat(
-                'dd MMMM sebagaimana',
-                'id_ID',
+                'dd MMMM yyyy', // Format 'dd MMMM yyyy' lebih umum dan bagus
+                'id_ID', // Menambahkan locale Indonesia
               ).format(widget.selectedDate),
             ),
             _buildDetailRow(
@@ -307,7 +314,6 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  // Akses saldo dari authProvider
                   Text(
                     'Rp ${authProvider.userBalance.toInt()}',
                     style: AppStyles.bodyTextStyle.copyWith(
@@ -372,6 +378,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
             value,
             style: AppStyles.bodyTextStyle.copyWith(
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              color: isBold ? AppStyles.primaryColor : AppStyles.textColor,
             ),
           ),
         ],

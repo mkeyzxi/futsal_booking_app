@@ -37,6 +37,7 @@ class _AdminScheduleManagementScreenState
   }
 
   Future<void> _fetchData() async {
+    // Memuat semua booking dan lapangan
     await Provider.of<BookingProvider>(context, listen: false).fetchBookings();
     await Provider.of<FieldProvider>(context, listen: false).fetchFields();
   }
@@ -61,7 +62,8 @@ class _AdminScheduleManagementScreenState
     List<Field> allFields,
   ) {
     Map<Field, List<Map<String, dynamic>>> fieldSchedules = {};
-    final selectedDay = DateTime(
+    final DateTime selectedDayOnly = DateTime(
+      // Deklarasikan di sini
       _selectedDate.year,
       _selectedDate.month,
       _selectedDate.day,
@@ -82,9 +84,12 @@ class _AdminScheduleManagementScreenState
       final relevantBookings =
           allBookings.where((booking) {
             return booking.fieldId == field.id &&
-                booking.bookingDate.year == selectedDay.year &&
-                booking.bookingDate.month == selectedDay.month &&
-                booking.bookingDate.day == selectedDay.day &&
+                booking.bookingDate.year ==
+                    selectedDayOnly.year && // Gunakan selectedDayOnly
+                booking.bookingDate.month ==
+                    selectedDayOnly.month && // Gunakan selectedDayOnly
+                booking.bookingDate.day ==
+                    selectedDayOnly.day && // Gunakan selectedDayOnly
                 booking.status != BookingStatus.cancelled &&
                 booking.status != BookingStatus.completed;
           }).toList();
@@ -110,16 +115,16 @@ class _AdminScheduleManagementScreenState
 
       // Inisialisasi waktu mulai jadwal lapangan
       DateTime currentCursor = DateTime(
-        selectedDay.year,
-        selectedDay.month,
-        selectedDay.day,
+        selectedDayOnly.year, // Gunakan selectedDayOnly
+        selectedDayOnly.month, // Gunakan selectedDayOnly
+        selectedDayOnly.day, // Gunakan selectedDayOnly
         _openingTime.hour,
         _openingTime.minute,
       );
       DateTime closingDateTime = DateTime(
-        selectedDay.year,
-        selectedDay.month,
-        selectedDay.day,
+        selectedDayOnly.year, // Gunakan selectedDayOnly
+        selectedDayOnly.month, // Gunakan selectedDayOnly
+        selectedDayOnly.day, // Gunakan selectedDayOnly
         _closingTime.hour,
         _closingTime.minute,
       );
@@ -132,9 +137,9 @@ class _AdminScheduleManagementScreenState
           booking.startTime.split(':')[1],
         );
         final DateTime bookingStartDateTime = DateTime(
-          selectedDay.year,
-          selectedDay.month,
-          selectedDay.day,
+          selectedDayOnly.year, // Gunakan selectedDayOnly
+          selectedDayOnly.month, // Gunakan selectedDayOnly
+          selectedDayOnly.day, // Gunakan selectedDayOnly
           bookedStartHourParsed,
           bookedStartMinuteParsed,
         );
@@ -226,7 +231,7 @@ class _AdminScheduleManagementScreenState
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Tanggal Dipilih: ${DateFormat('dd MMMM yyyy', 'id_ID').format(_selectedDate)}', // Menambah 'yyyy'
+                      'Tanggal Dipilih: ${DateFormat('dd MMMM yyyy', 'id_ID').format(_selectedDate)}',
                       style: AppStyles.bodyTextStyle.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -275,16 +280,101 @@ class _AdminScheduleManagementScreenState
                             final field = sortedFields[fieldIndex];
                             final segments = fieldSchedules[field] ?? [];
 
-                            if (segments.isEmpty) {
-                              // Jika tidak ada segmen (misal: lapangan tidak memiliki jam buka), tampilkan pesan
+                            if (segments.isEmpty &&
+                                _selectedDate.isBefore(
+                                  DateTime.now().subtract(
+                                    const Duration(days: 1),
+                                  ),
+                                )) {
+                              // Jika tidak ada segmen dan tanggal sudah lewat, tampilkan pesan
                               return Padding(
                                 padding: const EdgeInsets.all(
                                   AppStyles.defaultPadding,
                                 ),
                                 child: Text(
-                                  'Tidak ada jadwal tersedia untuk ${field.name} pada tanggal ini.',
+                                  'Tidak ada jadwal atau booking yang aktif untuk ${field.name} pada tanggal ini.',
                                   style: AppStyles.bodyTextStyle.copyWith(
                                     color: Colors.grey[600],
+                                  ),
+                                ),
+                              );
+                            } else if (segments.isEmpty &&
+                                _selectedDate.isAfter(
+                                  DateTime.now().subtract(
+                                    const Duration(days: 1),
+                                  ),
+                                )) {
+                              // Jika tidak ada segmen tapi tanggal belum lewat (berarti semua slot tersedia)
+                              return Card(
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: AppStyles.defaultPadding,
+                                  vertical: 8,
+                                ),
+                                elevation: 4,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AppStyles.defaultBorderRadius,
+                                  ),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(
+                                    AppStyles.defaultPadding,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${field.name} (${field.type})',
+                                        style: AppStyles.subHeadingStyle
+                                            .copyWith(
+                                              fontSize: 18,
+                                              color: AppStyles.primaryColor,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Container(
+                                        margin: const EdgeInsets.only(
+                                          bottom: 8,
+                                        ),
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: AppStyles.successColor
+                                              .withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(
+                                            AppStyles.defaultBorderRadius / 2,
+                                          ),
+                                          border: Border.all(
+                                            color: AppStyles.successColor,
+                                            width: 0.5,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              '${DateFormat('HH:mm').format(DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, _openingTime.hour, _openingTime.minute))} - ${DateFormat('HH:mm').format(DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, _closingTime.hour, _closingTime.minute))}',
+                                              style: AppStyles.bodyTextStyle
+                                                  .copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                    color:
+                                                        AppStyles.successColor,
+                                                  ),
+                                            ),
+                                            Text(
+                                              'Sepenuhnya Tersedia',
+                                              style: AppStyles.smallTextStyle
+                                                  .copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                    color:
+                                                        AppStyles.successColor,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               );
@@ -330,7 +420,7 @@ class _AdminScheduleManagementScreenState
                                             final bool isPast =
                                                 segment['isPast'];
                                             final Booking? booking =
-                                                segment['booking']; // Hanya ada jika type=='booked'
+                                                segment['booking'];
 
                                             if (isPast) {
                                               segmentColor = Colors.grey[200]!;
@@ -352,7 +442,6 @@ class _AdminScheduleManagementScreenState
                                                 }
                                               };
                                             } else {
-                                              // type == 'available'
                                               segmentColor = AppStyles
                                                   .successColor
                                                   .withOpacity(0.1);
@@ -446,7 +535,7 @@ class _AdminScheduleManagementScreenState
     );
   }
 
-  // Dialog untuk menampilkan detail satu booking
+  // Dialog untuk menampilkan detail satu booking (sama seperti di AdminBookingManagementScreen)
   void _showBookingDetailsDialog(
     BuildContext context,
     Booking booking,
@@ -492,106 +581,15 @@ class _AdminScheduleManagementScreenState
                       .toString()
                       .split('.')
                       .last
-                      .replaceAll('paidDP', 'DP Dibayar ')
-                      .replaceAll('paidFull', 'Lunas ')
-                      .replaceAll('pendingPayment', 'Menunggu Pembayaran'),
+                      .replaceAll('pendingPayment', 'Menunggu Pembayaran')
+                      .replaceAll('paidDP', 'DP Dibayar')
+                      .replaceAll('paidFull', 'Lunas')
+                      .replaceAll('cancelled', 'Dibatalkan')
+                      .replaceAll('completed', 'Selesai'),
                 ),
                 const SizedBox(height: 16),
-                if (booking.status != BookingStatus.cancelled &&
-                    booking.status != BookingStatus.completed)
-                  Column(
-                    children: [
-                      ElevatedButton(
-                        onPressed:
-                            bookingProvider.isLoading
-                                ? null
-                                : () => _confirmCancelBooking(
-                                  context,
-                                  booking,
-                                  bookingProvider,
-                                ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppStyles.errorColor,
-                          minimumSize: const Size.fromHeight(40),
-                        ),
-                        child:
-                            bookingProvider.isLoading &&
-                                    bookingProvider.errorMessage == null
-                                ? const SizedBox(
-                                  width: 15,
-                                  height: 15,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 1.5,
-                                  ),
-                                )
-                                : const Text(
-                                  'Batalkan Booking',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                      ),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed:
-                            bookingProvider.isLoading
-                                ? null
-                                : () => _confirmPaymentUpdate(
-                                  context,
-                                  booking,
-                                  bookingProvider,
-                                ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppStyles.primaryColor,
-                          minimumSize: const Size.fromHeight(40),
-                        ),
-                        child:
-                            bookingProvider.isLoading &&
-                                    bookingProvider.errorMessage == null
-                                ? const SizedBox(
-                                  width: 15,
-                                  height: 15,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 1.5,
-                                  ),
-                                )
-                                : const Text(
-                                  'Update Pembayaran',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                      ),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed:
-                            bookingProvider.isLoading
-                                ? null
-                                : () => _confirmCompleteBooking(
-                                  context,
-                                  booking,
-                                  bookingProvider,
-                                ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppStyles.successColor,
-                          minimumSize: const Size.fromHeight(40),
-                        ),
-                        child:
-                            bookingProvider.isLoading &&
-                                    bookingProvider.errorMessage == null
-                                ? const SizedBox(
-                                  width: 15,
-                                  height: 15,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 1.5,
-                                  ),
-                                )
-                                : const Text(
-                                  'Tandai Selesai',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                      ),
-                    ],
-                  ),
+                // Tombol aksi di dalam dialog detail
+                _buildActionButtons(context, booking, bookingProvider),
               ],
             ),
           ),
@@ -603,6 +601,7 @@ class _AdminScheduleManagementScreenState
               ),
               onPressed: () {
                 Navigator.of(context).pop();
+                // Refresh data setelah menutup dialog jika ada perubahan
                 bookingProvider.fetchBookings();
               },
             ),
@@ -612,7 +611,123 @@ class _AdminScheduleManagementScreenState
     );
   }
 
-  // Metode pembantu untuk baris detail
+  // Helper untuk tombol aksi di card (sama seperti di AdminBookingManagementScreen)
+  Widget _buildActionButtons(
+    BuildContext context,
+    Booking booking,
+    BookingProvider bookingProvider,
+  ) {
+    if (booking.status == BookingStatus.cancelled ||
+        booking.status == BookingStatus.completed) {
+      return const SizedBox.shrink(); // Tidak menampilkan tombol jika sudah dibatalkan/selesai
+    }
+
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed:
+                bookingProvider.isLoading
+                    ? null
+                    : () => _confirmPaymentUpdate(
+                      context,
+                      booking,
+                      bookingProvider,
+                    ),
+            style: AppStyles.primaryButtonStyle,
+            child:
+                bookingProvider.isLoading
+                    ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                    : Text('Update Pembayaran', style: AppStyles.buttonText),
+          ),
+        ),
+        const SizedBox(height: AppStyles.paddingSmall),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed:
+                bookingProvider.isLoading
+                    ? null
+                    : () => _confirmCompleteBooking(
+                      context,
+                      booking,
+                      bookingProvider,
+                    ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppStyles.successColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppStyles.radiusDefault),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppStyles.paddingLarge,
+                vertical: AppStyles.paddingSmall,
+              ),
+              textStyle: AppStyles.buttonText,
+            ),
+            child:
+                bookingProvider.isLoading
+                    ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                    : Text('Tandai Selesai', style: AppStyles.buttonText),
+          ),
+        ),
+        const SizedBox(height: AppStyles.paddingSmall),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed:
+                bookingProvider.isLoading
+                    ? null
+                    : () => _confirmCancelBooking(
+                      context,
+                      booking,
+                      bookingProvider,
+                    ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppStyles.errorColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppStyles.radiusDefault),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppStyles.paddingLarge,
+                vertical: AppStyles.paddingSmall,
+              ),
+              textStyle: AppStyles.buttonText,
+            ),
+            child:
+                bookingProvider.isLoading
+                    ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                    : Text('Batalkan Booking', style: AppStyles.buttonText),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Metode pembantu untuk baris detail (tidak ada perubahan)
   Widget _buildDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
@@ -641,20 +756,20 @@ class _AdminScheduleManagementScreenState
   }
 
   // Metode konfirmasi aksi (cancel, complete, payment update) yang dipanggil dari dialog detail
+  // Ini adalah duplikat dari AdminBookingManagementScreen, sengaja disimpan agar bisa langsung dipakai
   void _confirmCancelBooking(
     BuildContext context,
     Booking booking,
     BookingProvider bookingProvider,
   ) {
-    // Tutup dialog sebelumnya (detail booking)
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(); // Tutup dialog detail jadwal
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Batalkan Booking?'),
           content: Text(
-            'Anda yakin ingin membatalkan booking lapangan "${booking.field?.name}" oleh "${booking.user?.username}" pada ${DateFormat('dd MMM HH:mm', 'id_ID').format(booking.bookingDate)}?',
+            'Anda yakin ingin membatalkan booking lapangan "${booking.field?.name ?? 'Tidak Dikenal'}" oleh "${booking.user?.username ?? 'Anonim'}" pada ${DateFormat('dd MMM HH:mm', 'id_ID').format(booking.bookingDate.add(Duration(hours: int.parse(booking.startTime.split(':')[0]), minutes: int.parse(booking.startTime.split(':')[1]))))}?',
           ),
           actions: <Widget>[
             TextButton(
@@ -674,7 +789,8 @@ class _AdminScheduleManagementScreenState
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Booking berhasil dibatalkan.')),
                 );
-                bookingProvider.fetchBookings(); // Refresh data setelah aksi
+                // Refresh data setelah aksi
+                _fetchData(); // Panggil _fetchData untuk memperbarui kedua provider
               },
             ),
           ],
@@ -688,14 +804,14 @@ class _AdminScheduleManagementScreenState
     Booking booking,
     BookingProvider bookingProvider,
   ) {
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(); // Tutup dialog detail jadwal
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Selesaikan Booking?'),
           content: Text(
-            'Anda yakin ingin menandai booking lapangan "${booking.field?.name}" oleh "${booking.user?.username}" selesai?',
+            'Anda yakin ingin menandai booking lapangan "${booking.field?.name ?? 'Tidak Dikenal'}" oleh "${booking.user?.username ?? 'Anonim'}" selesai?',
           ),
           actions: <Widget>[
             TextButton(
@@ -715,7 +831,8 @@ class _AdminScheduleManagementScreenState
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Booking ditandai selesai.')),
                 );
-                bookingProvider.fetchBookings();
+                // Refresh data setelah aksi
+                _fetchData(); // Panggil _fetchData untuk memperbarui kedua provider
               },
             ),
           ],
@@ -729,11 +846,15 @@ class _AdminScheduleManagementScreenState
     Booking booking,
     BookingProvider bookingProvider,
   ) {
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(); // Tutup dialog detail jadwal
     TextEditingController amountController = TextEditingController();
     showDialog(
       context: context,
       builder: (BuildContext context) {
+        // Mendapatkan tema input dari AppStyles.inputDecorationTheme
+        final InputDecorationTheme inputTheme =
+            Theme.of(context).inputDecorationTheme;
+
         return AlertDialog(
           title: const Text('Update Pembayaran'),
           content: Column(
@@ -748,9 +869,10 @@ class _AdminScheduleManagementScreenState
               TextField(
                 controller: amountController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
+                // Terapkan tema input ke InputDecoration
+                decoration: InputDecoration(
                   hintText: 'Masukkan jumlah pembayaran',
-                ),
+                ).applyDefaults(inputTheme), // Panggil applyDefaults
               ),
             ],
           ),
@@ -788,7 +910,11 @@ class _AdminScheduleManagementScreenState
                 }
 
                 Navigator.of(context).pop();
-                await bookingProvider.updateBookingPayment(booking.id, amount);
+                await bookingProvider.updateBookingPayment(
+                  booking.id,
+                  amount,
+                  booking.userId,
+                );
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
@@ -796,7 +922,8 @@ class _AdminScheduleManagementScreenState
                     ),
                   ),
                 );
-                bookingProvider.fetchBookings();
+                // Refresh data setelah aksi
+                _fetchData(); // Panggil _fetchData untuk memperbarui kedua provider
               },
             ),
           ],

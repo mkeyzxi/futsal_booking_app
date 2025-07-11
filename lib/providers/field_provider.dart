@@ -14,6 +14,10 @@ class FieldProvider with ChangeNotifier {
 
   final FieldService _fieldService = FieldService();
 
+  FieldProvider() {
+    fetchFields(); // Muat data saat provider diinisialisasi
+  }
+
   Future<void> fetchFields() async {
     _isLoading = true;
     _errorMessage = null;

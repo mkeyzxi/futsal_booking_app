@@ -1,10 +1,11 @@
+// lib/views/user/user_dashboard_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:futsal_booking_app/providers/auth_provider.dart';
 import 'package:futsal_booking_app/providers/field_provider.dart';
 import 'package:futsal_booking_app/providers/booking_provider.dart';
 import 'package:futsal_booking_app/models/field.dart';
-import 'package:futsal_booking_app/models/booking.dart'; // Your updated Booking model
+import 'package:futsal_booking_app/models/booking.dart';
 import 'package:futsal_booking_app/views/auth/login_screen.dart';
 import 'package:futsal_booking_app/views/user/field_list_screen.dart';
 import 'package:futsal_booking_app/views/user/booking_history_screen.dart';
@@ -43,7 +44,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Memuat data fields saat init
       Provider.of<FieldProvider>(context, listen: false).fetchFields();
+
+      // Memuat booking terbaru untuk user yang sedang login
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.currentUser != null) {
         Provider.of<BookingProvider>(
@@ -66,24 +70,27 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       _selectedIndex = index;
     });
 
+    // Menggunakan pushReplacementNamed jika Anda ingin menghapus tumpukan rute sebelumnya
+    // atau pushNamed jika ingin tetap di tumpukan (dengan tombol back aktif)
+    // Untuk navigasi BottomNavBar, biasanya lebih umum menggunakan pushReplacement atau popUntil
+    // agar tumpukan rute tidak terlalu dalam.
+    // Namun, sesuai struktur Anda yang menggunakan push untuk setiap halaman, kita akan tetap pakai itu.
+    // Pastikan rute yang ada di AppRouter sesuai jika Anda menggunakannya.
     switch (index) {
       case 0:
-        // Beranda - Tetap di halaman ini, atau pop hingga root jika diperlukan
+        // Beranda - Sudah di sini, tidak perlu navigasi
         break;
       case 1:
-        // Booking (Daftar Lapangan) - Menggunakan push untuk tombol kembali
         Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (_) => const FieldListScreen()));
         break;
       case 2:
-        // Riwayat Booking - Menggunakan push untuk tombol kembali
         Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (_) => const BookingHistoryScreen()));
         break;
       case 3:
-        // Profil - Menggunakan push untuk tombol kembali
         Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
@@ -94,40 +101,28 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   /// Helper function to combine bookingDate and startTime string into a DateTime object.
   /// Handles cases where startTime might be 'HH:mm' or 'HH'
   DateTime _getBookingDateTime(DateTime date, String timeString) {
-    final DateTime now = DateTime.now();
-    // Try to parse as HH:mm first
-    DateTime? parsedTime;
+    // Default to current year, month, day if not provided by date
+    final int year = date.year;
+    final int month = date.month;
+    final int day = date.day;
+
+    int hour = 0;
+    int minute = 0;
     try {
       final List<String> parts = timeString.split(':');
       if (parts.length == 2) {
-        parsedTime = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          int.parse(parts[0]),
-          int.parse(parts[1]),
-        );
+        hour = int.parse(parts[0]);
+        minute = int.parse(parts[1]);
       } else {
-        // Fallback to just hour if no minutes
-        parsedTime = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          int.parse(timeString),
-        );
+        // Fallback to just hour if no minutes (e.g., "9" for 09:00)
+        hour = int.parse(timeString);
       }
     } catch (e) {
-      // Fallback if parsing fails, e.g., default to start of day
-      parsedTime = DateTime(now.year, now.month, now.day, 0, 0);
+      // Log error or handle gracefully
+      print('Error parsing time string: $timeString, $e');
     }
 
-    return DateTime(
-      date.year,
-      date.month,
-      date.day,
-      parsedTime.hour,
-      parsedTime.minute,
-    );
+    return DateTime(year, month, day, hour, minute);
   }
 
   @override
@@ -148,13 +143,13 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // Mengambil booking terbaru untuk ditampilkan
-    final latestBooking =
-        bookingProvider.bookings.where((b) => b.userId == user.id).toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
+    // Mengambil booking terbaru untuk ditampilkan (sudah difilter di provider untuk user saat ini)
+    final latestBookingsForUser =
+        bookingProvider
+            .bookings; // bookings di provider sudah difilter untuk user ini
+    latestBookingsForUser.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     Booking? recentBooking =
-        latestBooking.isNotEmpty ? latestBooking.first : null;
+        latestBookingsForUser.isNotEmpty ? latestBookingsForUser.first : null;
 
     return Scaffold(
       backgroundColor: AppStyles.backgroundColor,
@@ -188,7 +183,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       profileImage = NetworkImage(
                         auth.currentUser!.profileImageUrl!,
                       );
-                    } else {
+                    } else if (File(
+                      auth.currentUser!.profileImageUrl!,
+                    ).existsSync()) {
+                      // Pastikan file ada
                       profileImage = FileImage(
                         File(auth.currentUser!.profileImageUrl!),
                       );
@@ -504,7 +502,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                     profileImage = NetworkImage(
                       auth.currentUser!.profileImageUrl!,
                     );
-                  } else {
+                  } else if (File(
+                    auth.currentUser!.profileImageUrl!,
+                  ).existsSync()) {
+                    // Pastikan file ada
                     profileImage = FileImage(
                       File(auth.currentUser!.profileImageUrl!),
                     );

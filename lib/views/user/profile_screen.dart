@@ -42,6 +42,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.currentUser;
 
+    if (authProvider.isLoading) {
+      // Tampilkan loading state
+      return Scaffold(
+        appBar: AppBar(title: const Text('Profil Saya')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     if (user == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Profil Saya')),
@@ -49,6 +57,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Text('User tidak ditemukan atau belum login.'),
         ),
       );
+    }
+
+    // Periksa apakah imageUrl adalah path lokal atau URL jaringan
+    ImageProvider? profileImage;
+    if (user.profileImageUrl != null) {
+      if (user.profileImageUrl!.startsWith('http')) {
+        profileImage = NetworkImage(user.profileImageUrl!);
+      } else if (File(user.profileImageUrl!).existsSync()) {
+        // Pastikan file ada
+        profileImage = FileImage(File(user.profileImageUrl!));
+      }
     }
 
     return Scaffold(
@@ -64,15 +83,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 CircleAvatar(
                   radius: 80,
                   backgroundColor: AppStyles.primaryColor,
-                  backgroundImage:
-                      user.profileImageUrl != null
-                          ? (user.profileImageUrl!.startsWith('http')
-                              ? NetworkImage(user.profileImageUrl!)
-                              : FileImage(File(user.profileImageUrl!))
-                                  as ImageProvider)
-                          : null,
+                  backgroundImage: profileImage,
                   child:
-                      user.profileImageUrl == null
+                      profileImage == null
                           ? const Icon(
                             Icons.person,
                             size: 80,

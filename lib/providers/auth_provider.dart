@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:futsal_booking_app/models/user.dart';
 import 'package:futsal_booking_app/services/auth_service.dart';
-import 'package:futsal_booking_app/utils/constants.dart'; // Untuk AppConstants.initialBalance
+import 'package:futsal_booking_app/utils/constants.dart';
 
 class AuthProvider with ChangeNotifier {
   User? _currentUser;
@@ -26,20 +26,13 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     try {
       _currentUser = await _authService.getCurrentUser();
+      // Logic fallback saldo awal (opsional, tergantung kebutuhan)
       if (_currentUser != null &&
           _currentUser!.role == UserRole.user &&
-          _currentUser!.balance == 0.0) {
-        // Ini adalah fallback jika user lama terdaftar tanpa saldo, berikan saldo awal
-        // HANYA jika saldonya 0.0. Hati-hati dengan ini di produksi.
-        // Untuk demo, kita bisa paksakan saldo awal jika 0.
-        // Dalam produksi, ini lebih baik diatur saat register
-        // atau migrasi data.
-        if (_currentUser!.balance < AppConstants.initialBalance / 2 &&
-            _currentUser!.id != 'admin_futsal_id') {
-          // Contoh kondisi
-          _currentUser!.balance = AppConstants.initialBalance;
-          await _authService.updateUser(_currentUser!);
-        }
+          _currentUser!.balance < AppConstants.initialBalance / 2 &&
+          _currentUser!.id != 'admin_futsal_id') {
+        _currentUser!.balance = AppConstants.initialBalance;
+        await _authService.updateUser(_currentUser!);
       }
     } catch (e) {
       _errorMessage = 'Gagal memuat data pengguna: ${e.toString()}';
@@ -57,8 +50,7 @@ class AuthProvider with ChangeNotifier {
     try {
       final user = await _authService.login(username, password);
       if (user != null) {
-        _currentUser = user;
-        // setCurrentUser sudah dipanggil di AuthService.login
+        _currentUser = user; // Set current user
         _isLoading = false;
         notifyListeners();
         return true;
@@ -82,9 +74,9 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // AuthService.register sekarang otomatis memberikan saldo awal
       final user = await _authService.register(username, email, password);
       if (user != null) {
+        // Tidak otomatis login setelah register, biarkan user login secara manual
         _isLoading = false;
         notifyListeners();
         return true;
@@ -109,18 +101,18 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> updateProfileImage(String imageUrl) async {
     if (_currentUser != null) {
-      _currentUser = User(
-        // Buat objek User baru dengan URL gambar baru
+      User updatedUser = User(
         id: _currentUser!.id,
         username: _currentUser!.username,
         email: _currentUser!.email,
         role: _currentUser!.role,
         profileImageUrl: imageUrl,
-        balance: _currentUser!.balance, // Penting: Pertahankan saldo lama
+        balance: _currentUser!.balance,
       );
-      await _authService.updateUser(_currentUser!); // Simpan ke service
-      // loadCurrentUser() akan otomatis memperbarui _currentUser
-      notifyListeners(); // Trigger rebuild
+      await _authService.updateUser(updatedUser);
+      _currentUser =
+          await _authService.getCurrentUser(); // Muat ulang dari service
+      notifyListeners();
     }
   }
 
@@ -132,20 +124,19 @@ class AuthProvider with ChangeNotifier {
     if (_currentUser!.balance < amount) {
       throw Exception('Saldo tidak cukup untuk transaksi ini.');
     }
-    _currentUser!.balance -= amount; // Kurangi saldo
-    await _authService.updateUser(_currentUser!); // Simpan perubahan saldo
-    notifyListeners(); // Beritahu listener bahwa saldo berubah
+    _currentUser!.balance -= amount;
+    await _authService.updateUser(_currentUser!);
+    notifyListeners();
   }
 
   Future<void> addBalance(double amount) async {
-    if (_currentUser == null || _currentUser!.role != UserRole.user) {
-      throw Exception('Hanya pengguna yang dapat melakukan transaksi.');
+    if (_currentUser == null) {
+      throw Exception('Tidak ada pengguna yang sedang login.');
     }
-    _currentUser!.balance += amount; // Tambah saldo
-    await _authService.updateUser(_currentUser!); // Simpan perubahan saldo
-    notifyListeners(); // Beritahu listener bahwa saldo berubah
+    _currentUser!.balance += amount;
+    await _authService.updateUser(_currentUser!);
+    notifyListeners();
   }
 
-  // Metode untuk menampilkan saldo saat ini dari user yang sedang login
   double get userBalance => _currentUser?.balance ?? 0.0;
 }
