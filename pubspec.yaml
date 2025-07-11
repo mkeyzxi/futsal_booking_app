@@ -5,7 +5,7 @@ publish_to: 'none'
 version: 0.1.0
 
 environment:
-  sdk: '>=3.7.2 <4.0.0' # Menggunakan rentang versi yang lebih aman untuk SDK
+  sdk: '>=3.7.2 <4.0.0'
 dependencies:
   flutter:
     sdk: flutter
@@ -14,8 +14,10 @@ dependencies:
   image_picker: ^1.0.4
   intl: ^0.19.0
   uuid: ^4.4.0
-  flutter_localizations: # <--- PASTIKAN INI ADA!
-    sdk: flutter         # <--- DAN INI!
+  sqflite: ^2.3.0 # Pastikan ini benar dan tidak ada typo
+  path_provider: ^2.1.1
+  flutter_localizations:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:
@@ -31,10 +33,3 @@ flutter:
     - assets/images/futsal_field_synthetic.png
     - assets/images/futsal_field_standard.png
     - assets/images/
-  # Untuk menambahkan font custom, jika Anda ingin menggunakan Montserrat
-  # fonts:
-  #   - family: Montserrat
-  #     fonts:
-  #       - asset: assets/fonts/Montserrat-Regular.ttf
-  #       - asset: assets/fonts/Montserrat-Bold.ttf
-  #         weight: 700

@@ -46,7 +46,7 @@ class AdminDashboardScreen extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(AppStyles.defaultPadding),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
               'Halo Admin, ${authProvider.currentUser?.username ?? ''}!',
@@ -97,18 +97,6 @@ class AdminDashboardScreen extends StatelessWidget {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => const AdminFieldManagementScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildAdminDashboardCard(
-                    context,
-                    icon: Icons.settings,
-                    title: 'Pengaturan',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Fitur pengaturan akan segera hadir!'),
                         ),
                       );
                     },

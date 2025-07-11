@@ -1,849 +1,11 @@
-// import 'package:flutter/material.dart';
-// import 'package:provider/provider.dart';
-// import 'package:futsal_booking_app/providers/auth_provider.dart';
-// import 'package:futsal_booking_app/providers/field_provider.dart';
-// import 'package:futsal_booking_app/providers/booking_provider.dart';
-// import 'package:futsal_booking_app/models/field.dart';
-// import 'package:futsal_booking_app/models/booking.dart';
-// import 'package:futsal_booking_app/views/auth/login_screen.dart';
-// import 'package:futsal_booking_app/views/user/field_list_screen.dart';
-// import 'package:futsal_booking_app/views/user/booking_history_screen.dart';
-// import 'package:futsal_booking_app/views/user/profile_screen.dart';
-// import 'package:futsal_booking_app/views/user/field_detail_screen.dart';
-// import 'package:futsal_booking_app/utils/app_styles.dart';
-// import 'package:intl/intl.dart';
-// import 'dart:io';
-
-// class UserDashboardScreen extends StatefulWidget {
-//   const UserDashboardScreen({super.key});
-
-//   @override
-//   State<UserDashboardScreen> createState() => _UserDashboardScreenState();
-// }
-
-// class _UserDashboardScreenState extends State<UserDashboardScreen> {
-//   int _currentFieldPageIndex = 0;
-//   int _selectedIndex =
-//       0; // Tambahkan untuk mengelola indeks BottomNavigationBar
-
-//   final List<String> _amenities = [
-//     'Free Water',
-//     'Artificial Grass',
-//     'Free Parking',
-//     'Kid Provided',
-//     'Changing Room',
-//   ];
-
-//   late PageController _fieldPageController;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _fieldPageController = PageController(
-//       viewportFraction: 0.85, // Adjust for card width
-//     );
-
-//     WidgetsBinding.instance.addPostFrameCallback((_) {
-//       Provider.of<FieldProvider>(context, listen: false).fetchFields();
-//       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-//       if (authProvider.currentUser != null) {
-//         Provider.of<BookingProvider>(
-//           context,
-//           listen: false,
-//         ).fetchBookings(userId: authProvider.currentUser!.id);
-//       }
-//     });
-//   }
-
-//   @override
-//   void dispose() {
-//     _fieldPageController.dispose();
-//     super.dispose();
-//   }
-
-//   // Fungsi untuk menangani navigasi BottomNavigationBar
-//   void _onItemTapped(int index) {
-//     setState(() {
-//       _selectedIndex = index;
-//     });
-
-//     switch (index) {
-//       case 0:
-//         // Beranda - Sudah di halaman ini, tidak perlu navigasi
-//         break;
-//       case 1:
-//         // Booking (Daftar Lapangan)
-//         Navigator.of(context).pushReplacement(
-//           MaterialPageRoute(builder: (_) => const FieldListScreen()),
-//         );
-//         break;
-//       case 2:
-//         // Riwayat Booking
-//         Navigator.of(context).pushReplacement(
-//           MaterialPageRoute(builder: (_) => const BookingHistoryScreen()),
-//         );
-//         break;
-//       case 3:
-//         // Profil
-//         Navigator.of(context).pushReplacement(
-//           MaterialPageRoute(builder: (_) => const ProfileScreen()),
-//         );
-//         break;
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final authProvider = Provider.of<AuthProvider>(context);
-//     final fieldProvider = Provider.of<FieldProvider>(context);
-//     final bookingProvider = Provider.of<BookingProvider>(context);
-//     final user = authProvider.currentUser;
-
-//     if (user == null) {
-//       WidgetsBinding.instance.addPostFrameCallback((_) {
-//         Navigator.of(context).pushAndRemoveUntil(
-//           MaterialPageRoute(builder: (_) => const LoginScreen()),
-//           (Route<dynamic> route) => false,
-//         );
-//       });
-//       return const Scaffold(body: Center(child: CircularProgressIndicator()));
-//     }
-
-//     final latestBooking =
-//         bookingProvider.bookings.where((b) => b.userId == user.id).toList()
-//           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-//     Booking? recentBooking =
-//         latestBooking.isNotEmpty ? latestBooking.first : null;
-
-//     return Scaffold(
-//       backgroundColor: AppStyles.backgroundColor,
-//       body: Column(
-//         children: [
-//           Expanded(
-//             child: SingleChildScrollView(
-//               physics: const BouncingScrollPhysics(), // Scroll halus
-//               child: Column(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [
-//                   // Top Banner Section
-//                   Stack(
-//                     children: [
-//                       Image.asset(
-//                         'assets/images/futsal_banner.png',
-//                         width: double.infinity,
-//                         height: 250,
-//                         fit: BoxFit.cover,
-//                       ),
-//                       Container(
-//                         width: double.infinity,
-//                         height: 250,
-//                         decoration: BoxDecoration(
-//                           gradient: LinearGradient(
-//                             begin: Alignment.topCenter,
-//                             end: Alignment.bottomCenter,
-//                             colors: [
-//                               Colors.black.withOpacity(0.2),
-//                               Colors.black.withOpacity(0.6),
-//                             ],
-//                           ),
-//                         ),
-//                       ),
-//                       SafeArea(
-//                         child: Padding(
-//                           padding: const EdgeInsets.symmetric(
-//                             horizontal: 16.0,
-//                             vertical: 8.0,
-//                           ),
-//                           child: Column(
-//                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                             crossAxisAlignment: CrossAxisAlignment.start,
-//                             children: [
-//                               Row(
-//                                 mainAxisAlignment:
-//                                     MainAxisAlignment.spaceBetween,
-//                                 children: [
-//                                   Builder(
-//                                     builder:
-//                                         (context) => IconButton(
-//                                           icon: const Icon(
-//                                             Icons.menu,
-//                                             color: Colors.white,
-//                                             size: 30,
-//                                           ),
-//                                           onPressed: () {
-//                                             Scaffold.of(context).openDrawer();
-//                                           },
-//                                         ),
-//                                   ),
-//                                   GestureDetector(
-//                                     onTap: () {
-//                                       Navigator.of(context).push(
-//                                         MaterialPageRoute(
-//                                           builder: (_) => const ProfileScreen(),
-//                                         ),
-//                                       );
-//                                     },
-//                                     child: Consumer<AuthProvider>(
-//                                       builder: (context, auth, child) {
-//                                         ImageProvider? profileImage;
-//                                         if (auth.currentUser?.profileImageUrl !=
-//                                             null) {
-//                                           if (auth.currentUser!.profileImageUrl!
-//                                               .startsWith('http')) {
-//                                             profileImage = NetworkImage(
-//                                               auth
-//                                                   .currentUser!
-//                                                   .profileImageUrl!,
-//                                             );
-//                                           } else {
-//                                             profileImage = FileImage(
-//                                               File(
-//                                                 auth
-//                                                     .currentUser!
-//                                                     .profileImageUrl!,
-//                                               ),
-//                                             );
-//                                           }
-//                                         }
-
-//                                         return CircleAvatar(
-//                                           backgroundColor: Colors.white,
-//                                           radius: 20,
-//                                           backgroundImage: profileImage,
-//                                           child:
-//                                               profileImage == null
-//                                                   ? const Icon(
-//                                                     Icons.person,
-//                                                     color:
-//                                                         AppStyles.primaryColor,
-//                                                     size: 25,
-//                                                   )
-//                                                   : null,
-//                                         );
-//                                       },
-//                                     ),
-//                                   ),
-//                                 ],
-//                               ),
-//                               const SizedBox(height: 80), // Kurangi jarak
-//                               Column(
-//                                 crossAxisAlignment: CrossAxisAlignment.start,
-//                                 children: [
-//                                   const Text(
-//                                     'Arena ',
-//                                     style: TextStyle(
-//                                       color: Color.fromARGB(255, 23, 158, 255),
-//                                       fontSize: 32,
-//                                       fontWeight: FontWeight.bold,
-//                                     ),
-//                                   ),
-//                                   const Text(
-//                                     'Futsal Stadion',
-//                                     style: TextStyle(
-//                                       color: Colors.white,
-//                                       fontSize: 28,
-//                                       fontWeight: FontWeight.bold,
-//                                     ),
-//                                   ),
-//                                   Text(
-//                                     'Reservation',
-//                                     style: TextStyle(
-//                                       color: Colors.white.withOpacity(0.8),
-//                                       fontSize: 18,
-//                                     ),
-//                                   ),
-//                                 ],
-//                               ),
-//                             ],
-//                           ),
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   const SizedBox(height: 16), // Kurangi jarak
-//                   // Amenities Section
-//                   Padding(
-//                     padding: const EdgeInsets.symmetric(
-//                       horizontal: AppStyles.defaultPadding,
-//                     ),
-//                     child: Text(
-//                       'Amenities',
-//                       style: AppStyles.subHeadingStyle.copyWith(
-//                         fontWeight: FontWeight.bold,
-//                       ),
-//                     ),
-//                   ),
-//                   const SizedBox(height: 8),
-//                   SizedBox(
-//                     height: 40,
-//                     child: ListView.separated(
-//                       padding: const EdgeInsets.symmetric(
-//                         horizontal: AppStyles.defaultPadding,
-//                       ),
-//                       scrollDirection: Axis.horizontal,
-//                       itemCount: _amenities.length,
-//                       separatorBuilder:
-//                           (context, index) => const SizedBox(width: 8),
-//                       itemBuilder: (context, index) {
-//                         return Chip(
-//                           label: Text(
-//                             _amenities[index],
-//                             style: AppStyles.smallTextStyle.copyWith(
-//                               color: AppStyles.textColor,
-//                             ),
-//                           ),
-//                           backgroundColor: AppStyles.backgroundColor,
-//                           shape: RoundedRectangleBorder(
-//                             borderRadius: BorderRadius.circular(20),
-//                             side: BorderSide(color: Colors.grey[300]!),
-//                           ),
-//                           padding: const EdgeInsets.symmetric(
-//                             horizontal: 12,
-//                             vertical: 4,
-//                           ),
-//                         );
-//                       },
-//                     ),
-//                   ),
-//                   const SizedBox(height: 24),
-
-//                   // Informasi Booking Terbaru Section
-//                   Padding(
-//                     padding: const EdgeInsets.symmetric(
-//                       horizontal: AppStyles.defaultPadding,
-//                     ),
-//                     child: Row(
-//                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                       children: [
-//                         Text(
-//                           'Transaksi Terbaru',
-//                           style: AppStyles.subHeadingStyle.copyWith(
-//                             fontWeight: FontWeight.bold,
-//                           ),
-//                         ),
-//                         if (bookingProvider.isLoading && recentBooking == null)
-//                           const SizedBox(
-//                             width: 16,
-//                             height: 16,
-//                             child: CircularProgressIndicator(strokeWidth: 2),
-//                           ),
-//                         if (bookingProvider.errorMessage != null &&
-//                             !bookingProvider.isLoading)
-//                           Tooltip(
-//                             message: bookingProvider.errorMessage,
-//                             child: const Icon(
-//                               Icons.error,
-//                               color: AppStyles.errorColor,
-//                             ),
-//                           ),
-//                       ],
-//                     ),
-//                   ),
-//                   const SizedBox(height: 8),
-//                   if (recentBooking == null)
-//                     Padding(
-//                       padding: const EdgeInsets.symmetric(
-//                         horizontal: AppStyles.defaultPadding,
-//                       ),
-//                       child: Center(
-//                         child: Text(
-//                           bookingProvider.isLoading
-//                               ? 'Memuat transaksi...'
-//                               : bookingProvider.errorMessage ??
-//                                   'Belum ada transaksi terbaru.',
-//                           style: AppStyles.bodyTextStyle.copyWith(
-//                             color: Colors.grey,
-//                           ),
-//                           textAlign: TextAlign.center,
-//                         ),
-//                       ),
-//                     )
-//                   else
-//                     _buildLatestBookingCard(context, recentBooking),
-//                   const SizedBox(height: 24),
-
-//                   // Field Selection (Carousel) Section
-//                   Padding(
-//                     padding: const EdgeInsets.symmetric(
-//                       horizontal: AppStyles.defaultPadding,
-//                     ),
-//                     child: Row(
-//                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                       children: [
-//                         Text(
-//                           'Pilih Lapangan',
-//                           style: AppStyles.subHeadingStyle.copyWith(
-//                             fontWeight: FontWeight.bold,
-//                           ),
-//                         ),
-//                         if (fieldProvider.isLoading)
-//                           const SizedBox(
-//                             width: 16,
-//                             height: 16,
-//                             child: CircularProgressIndicator(strokeWidth: 2),
-//                           ),
-//                         if (fieldProvider.errorMessage != null &&
-//                             !fieldProvider.isLoading)
-//                           Tooltip(
-//                             message: fieldProvider.errorMessage,
-//                             child: const Icon(
-//                               Icons.error,
-//                               color: AppStyles.errorColor,
-//                             ),
-//                           ),
-//                       ],
-//                     ),
-//                   ),
-//                   const SizedBox(height: 16),
-//                   if (fieldProvider.fields.isEmpty && !fieldProvider.isLoading)
-//                     Padding(
-//                       padding: const EdgeInsets.symmetric(
-//                         horizontal: AppStyles.defaultPadding,
-//                       ),
-//                       child: Center(
-//                         child: Text(
-//                           fieldProvider.errorMessage ??
-//                               'Tidak ada lapangan tersedia saat ini.',
-//                           style: AppStyles.bodyTextStyle.copyWith(
-//                             color: Colors.grey,
-//                           ),
-//                           textAlign: TextAlign.center,
-//                         ),
-//                       ),
-//                     )
-//                   else
-//                     SizedBox(
-//                       height: 260, // Sesuaikan tinggi agar tidak perlu scroll
-//                       child: PageView.builder(
-//                         controller: _fieldPageController,
-//                         itemCount: fieldProvider.fields.length,
-//                         onPageChanged: (index) {
-//                           setState(() {
-//                             _currentFieldPageIndex = index;
-//                           });
-//                         },
-//                         itemBuilder: (context, index) {
-//                           final Field field = fieldProvider.fields[index];
-//                           final bool isActive = _currentFieldPageIndex == index;
-//                           return AnimatedContainer(
-//                             duration: const Duration(milliseconds: 300),
-//                             margin: EdgeInsets.symmetric(
-//                               horizontal: isActive ? 8.0 : 16.0,
-//                               vertical: isActive ? 0.0 : 1,
-//                             ),
-//                             decoration: AppStyles.cardDecoration.copyWith(
-//                               border:
-//                                   isActive
-//                                       ? Border.all(
-//                                         color: AppStyles.primaryColor,
-//                                         width: 2,
-//                                       )
-//                                       : null,
-//                               boxShadow:
-//                                   isActive
-//                                       ? [
-//                                         BoxShadow(
-//                                           color: AppStyles.primaryColor
-//                                               .withOpacity(0.3),
-//                                           blurRadius: 10,
-//                                           offset: const Offset(0, 5),
-//                                         ),
-//                                       ]
-//                                       : AppStyles.cardDecoration.boxShadow,
-//                             ),
-//                             child: InkWell(
-//                               onTap: () {
-//                                 Navigator.of(context).push(
-//                                   MaterialPageRoute(
-//                                     builder:
-//                                         (_) => FieldDetailScreen(field: field),
-//                                   ),
-//                                 );
-//                               },
-//                               borderRadius: BorderRadius.circular(
-//                                 AppStyles.defaultBorderRadius,
-//                               ),
-//                               child: Column(
-//                                 crossAxisAlignment: CrossAxisAlignment.start,
-//                                 children: [
-//                                   ClipRRect(
-//                                     borderRadius: const BorderRadius.vertical(
-//                                       top: Radius.circular(
-//                                         AppStyles.defaultBorderRadius,
-//                                       ),
-//                                     ),
-//                                     // PENTING: Menggunakan Image.asset karena gambar adalah aset lokal
-//                                     child: Image.asset(
-//                                       field.imageUrl ??
-//                                           'assets/images/futsal_field_standard.png', // Fallback jika imageUrl null
-//                                       height: 120,
-//                                       width: double.infinity,
-//                                       fit: BoxFit.cover,
-//                                       errorBuilder: (
-//                                         context,
-//                                         error,
-//                                         stackTrace,
-//                                       ) {
-//                                         // Widget yang ditampilkan jika gambar gagal dimuat
-//                                         return Container(
-//                                           height: 120,
-//                                           width: double.infinity,
-//                                           color: Colors.grey[200],
-//                                           child: const Center(
-//                                             child: Icon(
-//                                               Icons.broken_image,
-//                                               color: Colors.grey,
-//                                               size: 40,
-//                                             ), // Ukuran ikon diperbesar
-//                                           ),
-//                                         );
-//                                       },
-//                                     ),
-//                                   ),
-//                                   Padding(
-//                                     padding: const EdgeInsets.all(
-//                                       AppStyles.defaultPadding / 2,
-//                                     ),
-//                                     child: Column(
-//                                       crossAxisAlignment:
-//                                           CrossAxisAlignment.start,
-//                                       children: [
-//                                         Text(
-//                                           field.name,
-//                                           style: AppStyles.subHeadingStyle
-//                                               .copyWith(
-//                                                 fontSize: 16,
-//                                                 fontWeight: FontWeight.bold,
-//                                               ),
-//                                         ),
-//                                         Text(
-//                                           field.type,
-//                                           style: AppStyles.smallTextStyle
-//                                               .copyWith(
-//                                                 color: Colors.grey[600],
-//                                               ),
-//                                         ),
-
-//                                         const SizedBox(
-//                                           height: 8,
-//                                         ), // Kurangi jarak
-
-//                                         Align(
-//                                           alignment: Alignment.bottomRight,
-//                                           child: Text(
-//                                             'Rp ${NumberFormat('#,##0', 'id_ID').format(field.pricePerHour)}/jam',
-//                                             style: AppStyles.bodyTextStyle
-//                                                 .copyWith(
-//                                                   fontWeight: FontWeight.bold,
-//                                                   color: AppStyles.primaryColor,
-//                                                 ),
-//                                           ),
-//                                         ),
-//                                       ],
-//                                     ),
-//                                   ),
-//                                 ],
-//                               ),
-//                             ),
-//                           );
-//                         },
-//                       ),
-//                     ),
-//                   const SizedBox(height: 24),
-//                 ],
-//               ),
-//             ),
-//           ),
-//           // Bottom Navigation Bar
-//           _buildBottomNavigationBar(context),
-//         ],
-//       ),
-//       // Drawer untuk navigasi
-//       drawer: Drawer(
-//         child: ListView(
-//           padding: EdgeInsets.zero,
-//           children: <Widget>[
-//             Consumer<AuthProvider>(
-//               builder: (context, auth, child) {
-//                 ImageProvider? profileImage;
-//                 if (auth.currentUser?.profileImageUrl != null) {
-//                   if (auth.currentUser!.profileImageUrl!.startsWith('http')) {
-//                     profileImage = NetworkImage(
-//                       auth.currentUser!.profileImageUrl!,
-//                     );
-//                   } else {
-//                     profileImage = FileImage(
-//                       File(auth.currentUser!.profileImageUrl!),
-//                     );
-//                   }
-//                 }
-//                 return UserAccountsDrawerHeader(
-//                   accountName: Text(
-//                     auth.currentUser?.username ?? 'Pengguna',
-//                     style: AppStyles.subHeadingStyle.copyWith(
-//                       color: Colors.white,
-//                     ),
-//                   ),
-//                   accountEmail: Column(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Text(
-//                         auth.currentUser?.email ?? '',
-//                         style: AppStyles.smallTextStyle.copyWith(
-//                           color: Colors.white70,
-//                         ),
-//                       ),
-//                       const SizedBox(height: 4),
-//                       Text(
-//                         'Saldo: Rp ${NumberFormat('#,##0', 'id_ID').format(auth.userBalance.toInt())}',
-//                         style: AppStyles.smallTextStyle.copyWith(
-//                           color: Colors.white,
-//                           fontWeight: FontWeight.bold,
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   currentAccountPicture: GestureDetector(
-//                     onTap: () {
-//                       Navigator.of(context).push(
-//                         MaterialPageRoute(
-//                           builder: (_) => const ProfileScreen(),
-//                         ),
-//                       );
-//                     },
-//                     child: CircleAvatar(
-//                       backgroundColor: Colors.white,
-//                       backgroundImage: profileImage,
-//                       child:
-//                           profileImage == null
-//                               ? const Icon(
-//                                 Icons.person,
-//                                 size: 50,
-//                                 color: AppStyles.primaryColor,
-//                               )
-//                               : null,
-//                     ),
-//                   ),
-//                   decoration: const BoxDecoration(
-//                     color: AppStyles.primaryColor,
-//                   ),
-//                 );
-//               },
-//             ),
-//             ListTile(
-//               leading: const Icon(
-//                 Icons.sports_soccer,
-//                 color: AppStyles.primaryColor,
-//               ),
-//               title: Text('Daftar Lapangan', style: AppStyles.bodyTextStyle),
-//               onTap: () {
-//                 Navigator.pop(context);
-//                 Navigator.of(context).push(
-//                   MaterialPageRoute(builder: (_) => const FieldListScreen()),
-//                 );
-//               },
-//             ),
-//             ListTile(
-//               leading: const Icon(Icons.history, color: AppStyles.primaryColor),
-//               title: Text('Riwayat Booking', style: AppStyles.bodyTextStyle),
-//               onTap: () {
-//                 Navigator.pop(context);
-//                 Navigator.of(context).push(
-//                   MaterialPageRoute(
-//                     builder: (_) => const BookingHistoryScreen(),
-//                   ),
-//                 );
-//               },
-//             ),
-//             ListTile(
-//               leading: const Icon(Icons.person, color: AppStyles.primaryColor),
-//               title: Text('Profil Saya', style: AppStyles.bodyTextStyle),
-//               onTap: () {
-//                 Navigator.pop(context);
-//                 Navigator.of(context).push(
-//                   MaterialPageRoute(builder: (_) => const ProfileScreen()),
-//                 );
-//               },
-//             ),
-//             const Divider(),
-//             ListTile(
-//               leading: const Icon(Icons.logout, color: AppStyles.errorColor),
-//               title: Text('Logout', style: AppStyles.bodyTextStyle),
-//               onTap: () async {
-//                 await authProvider.logout();
-//                 Navigator.of(context).pushAndRemoveUntil(
-//                   MaterialPageRoute(builder: (_) => const LoginScreen()),
-//                   (Route<dynamic> route) => false,
-//                 );
-//               },
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   // Widget untuk menampilkan kartu booking terbaru
-//   Widget _buildLatestBookingCard(BuildContext context, Booking booking) {
-//     Color statusColor;
-//     String statusText;
-//     switch (booking.status) {
-//       case BookingStatus.pendingPayment:
-//         statusColor = Colors.orange;
-//         statusText = 'Menunggu Pembayaran';
-//         break;
-//       case BookingStatus.paidDP:
-//         statusColor = Colors.blue;
-//         statusText = 'DP Dibayar';
-//         break;
-//       case BookingStatus.paidFull:
-//         statusColor = AppStyles.successColor;
-//         statusText = 'Lunas';
-//         break;
-//       case BookingStatus.cancelled:
-//         statusColor = AppStyles.errorColor;
-//         statusText = 'Dibatalkan';
-//         break;
-//       case BookingStatus.completed:
-//         statusColor = Colors.grey;
-//         statusText = 'Selesai';
-//         break;
-//     }
-
-//     return Card(
-//       margin: const EdgeInsets.symmetric(horizontal: AppStyles.defaultPadding),
-//       elevation: 4,
-//       shape: RoundedRectangleBorder(
-//         borderRadius: BorderRadius.circular(AppStyles.defaultBorderRadius),
-//       ),
-//       child: InkWell(
-//         onTap: () {
-//           Navigator.of(context).push(
-//             MaterialPageRoute(builder: (_) => const BookingHistoryScreen()),
-//           );
-//         },
-//         borderRadius: BorderRadius.circular(AppStyles.defaultBorderRadius),
-//         child: Padding(
-//           padding: const EdgeInsets.all(AppStyles.defaultPadding),
-//           child: Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               Row(
-//                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                 children: [
-//                   Text(
-//                     booking.field?.name ?? 'Lapangan Tidak Dikenal',
-//                     style: AppStyles.subHeadingStyle.copyWith(fontSize: 16),
-//                   ),
-//                   Container(
-//                     padding: const EdgeInsets.symmetric(
-//                       horizontal: 8,
-//                       vertical: 4,
-//                     ),
-//                     decoration: BoxDecoration(
-//                       color: statusColor.withOpacity(0.2),
-//                       borderRadius: BorderRadius.circular(4),
-//                     ),
-//                     child: Text(
-//                       statusText,
-//                       style: AppStyles.smallTextStyle.copyWith(
-//                         color: statusColor,
-//                         fontWeight: FontWeight.bold,
-//                       ),
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//               const SizedBox(height: 8),
-//               Text(
-//                 '${DateFormat('dd MMMM HH:mm', 'id_ID').format(booking.bookingDate)}',
-//                 style: AppStyles.bodyTextStyle.copyWith(
-//                   color: Colors.grey[700],
-//                 ),
-//               ),
-//               Text(
-//                 'Durasi: ${booking.durationHours} jam',
-//                 style: AppStyles.bodyTextStyle.copyWith(
-//                   color: Colors.grey[700],
-//                 ),
-//               ),
-//               const SizedBox(height: 4),
-//               Row(
-//                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                 children: [
-//                   Text(
-//                     'Total:',
-//                     style: AppStyles.bodyTextStyle.copyWith(
-//                       fontWeight: FontWeight.bold,
-//                     ),
-//                   ),
-//                   Text(
-//                     'Rp ${NumberFormat('#,##0', 'id_ID').format(booking.totalPrice.toInt())}',
-//                     style: AppStyles.bodyTextStyle.copyWith(
-//                       fontWeight: FontWeight.bold,
-//                       color: AppStyles.primaryColor,
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-//   // Bottom Navigation Bar Widget
-//   Widget _buildBottomNavigationBar(BuildContext context) {
-//     return Container(
-//       decoration: BoxDecoration(
-//         color: Colors.white,
-//         boxShadow: [
-//           BoxShadow(
-//             color: Colors.grey.withOpacity(0.2),
-//             spreadRadius: 3,
-//             blurRadius: 5,
-//             offset: const Offset(0, -3),
-//           ),
-//         ],
-//       ),
-//       child: BottomNavigationBar(
-//         currentIndex: _selectedIndex, // Gunakan _selectedIndex
-//         onTap: _onItemTapped, // Gunakan fungsi _onItemTapped
-//         selectedItemColor: AppStyles.primaryColor,
-//         unselectedItemColor: Colors.grey,
-//         showSelectedLabels: true,
-//         showUnselectedLabels: true,
-//         items: const [
-//           BottomNavigationBarItem(
-//             icon: Icon(Icons.home), // Ikon Beranda
-//             label: 'Beranda',
-//           ),
-//           BottomNavigationBarItem(
-//             icon: Icon(Icons.sports_soccer), // Ikon Booking/Daftar Lapangan
-//             label: 'Booking',
-//           ),
-//           BottomNavigationBarItem(
-//             icon: Icon(Icons.history), // Ikon Riwayat
-//             label: 'Riwayat',
-//           ),
-//           BottomNavigationBarItem(
-//             icon: Icon(Icons.person), // Ikon Profil
-//             label: 'Profil',
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
+// lib/views/user/user_dashboard_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:futsal_booking_app/providers/auth_provider.dart';
 import 'package:futsal_booking_app/providers/field_provider.dart';
 import 'package:futsal_booking_app/providers/booking_provider.dart';
 import 'package:futsal_booking_app/models/field.dart';
-import 'package:futsal_booking_app/models/booking.dart'; // Your updated Booking model
+import 'package:futsal_booking_app/models/booking.dart';
 import 'package:futsal_booking_app/views/auth/login_screen.dart';
 import 'package:futsal_booking_app/views/user/field_list_screen.dart';
 import 'package:futsal_booking_app/views/user/booking_history_screen.dart';
@@ -882,7 +44,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Memuat data fields saat init
       Provider.of<FieldProvider>(context, listen: false).fetchFields();
+
+      // Memuat booking terbaru untuk user yang sedang login
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.currentUser != null) {
         Provider.of<BookingProvider>(
@@ -905,24 +70,27 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       _selectedIndex = index;
     });
 
+    // Menggunakan pushReplacementNamed jika Anda ingin menghapus tumpukan rute sebelumnya
+    // atau pushNamed jika ingin tetap di tumpukan (dengan tombol back aktif)
+    // Untuk navigasi BottomNavBar, biasanya lebih umum menggunakan pushReplacement atau popUntil
+    // agar tumpukan rute tidak terlalu dalam.
+    // Namun, sesuai struktur Anda yang menggunakan push untuk setiap halaman, kita akan tetap pakai itu.
+    // Pastikan rute yang ada di AppRouter sesuai jika Anda menggunakannya.
     switch (index) {
       case 0:
-        // Beranda - Tetap di halaman ini, atau pop hingga root jika diperlukan
+        // Beranda - Sudah di sini, tidak perlu navigasi
         break;
       case 1:
-        // Booking (Daftar Lapangan) - Menggunakan push untuk tombol kembali
         Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (_) => const FieldListScreen()));
         break;
       case 2:
-        // Riwayat Booking - Menggunakan push untuk tombol kembali
         Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (_) => const BookingHistoryScreen()));
         break;
       case 3:
-        // Profil - Menggunakan push untuk tombol kembali
         Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
@@ -933,40 +101,28 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   /// Helper function to combine bookingDate and startTime string into a DateTime object.
   /// Handles cases where startTime might be 'HH:mm' or 'HH'
   DateTime _getBookingDateTime(DateTime date, String timeString) {
-    final DateTime now = DateTime.now();
-    // Try to parse as HH:mm first
-    DateTime? parsedTime;
+    // Default to current year, month, day if not provided by date
+    final int year = date.year;
+    final int month = date.month;
+    final int day = date.day;
+
+    int hour = 0;
+    int minute = 0;
     try {
       final List<String> parts = timeString.split(':');
       if (parts.length == 2) {
-        parsedTime = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          int.parse(parts[0]),
-          int.parse(parts[1]),
-        );
+        hour = int.parse(parts[0]);
+        minute = int.parse(parts[1]);
       } else {
-        // Fallback to just hour if no minutes
-        parsedTime = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          int.parse(timeString),
-        );
+        // Fallback to just hour if no minutes (e.g., "9" for 09:00)
+        hour = int.parse(timeString);
       }
     } catch (e) {
-      // Fallback if parsing fails, e.g., default to start of day
-      parsedTime = DateTime(now.year, now.month, now.day, 0, 0);
+      // Log error or handle gracefully
+      print('Error parsing time string: $timeString, $e');
     }
 
-    return DateTime(
-      date.year,
-      date.month,
-      date.day,
-      parsedTime.hour,
-      parsedTime.minute,
-    );
+    return DateTime(year, month, day, hour, minute);
   }
 
   @override
@@ -987,13 +143,13 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // Mengambil booking terbaru untuk ditampilkan
-    final latestBooking =
-        bookingProvider.bookings.where((b) => b.userId == user.id).toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
+    // Mengambil booking terbaru untuk ditampilkan (sudah difilter di provider untuk user saat ini)
+    final latestBookingsForUser =
+        bookingProvider
+            .bookings; // bookings di provider sudah difilter untuk user ini
+    latestBookingsForUser.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     Booking? recentBooking =
-        latestBooking.isNotEmpty ? latestBooking.first : null;
+        latestBookingsForUser.isNotEmpty ? latestBookingsForUser.first : null;
 
     return Scaffold(
       backgroundColor: AppStyles.backgroundColor,
@@ -1027,7 +183,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       profileImage = NetworkImage(
                         auth.currentUser!.profileImageUrl!,
                       );
-                    } else {
+                    } else if (File(
+                      auth.currentUser!.profileImageUrl!,
+                    ).existsSync()) {
+                      // Pastikan file ada
                       profileImage = FileImage(
                         File(auth.currentUser!.profileImageUrl!),
                       );
@@ -1343,7 +502,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                     profileImage = NetworkImage(
                       auth.currentUser!.profileImageUrl!,
                     );
-                  } else {
+                  } else if (File(
+                    auth.currentUser!.profileImageUrl!,
+                  ).existsSync()) {
+                    // Pastikan file ada
                     profileImage = FileImage(
                       File(auth.currentUser!.profileImageUrl!),
                     );

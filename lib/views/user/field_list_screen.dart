@@ -78,7 +78,8 @@ class _FieldListScreenState extends State<FieldListScreen> {
                   borderRadius: BorderRadius.circular(
                     AppStyles.defaultBorderRadius,
                   ),
-                  child: Image.network(
+                  child: Image.asset(
+                    // Menggunakan Image.asset karena path lokal
                     field.imageUrl!,
                     height: 150,
                     width: double.infinity,
